@@ -1,0 +1,817 @@
+#+options: ':nil *:t -:t ::t <:t H:3 \n:nil ^:t arch:headline
+#+options: author:t broken-links:nil c:nil creator:nil
+#+options: d:(not "LOGBOOK") date:t e:t email:nil f:t inline:t num:t
+#+options: p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t
+#+options: timestamp:t title:t toc:t todo:t |:t
+#+title: tf-cljs
+#+date: <2020-11-30 Mo>
+#+author: Cerealbuster
+#+email:
+#+language: en
+#+select_tags: export
+#+exclude_tags: noexport
+#+creator: Emacs 27.1 (Org mode 9.4)
+
+* About
+
+This is a ClojureScript wrapper for tfjs.
+For now I do not recommend to use it as i do it more for practicing
+literate programming and creating a wrapper.
+
+
+* deps.edn
+
+#+NAME: deps.edn
+#+begin_src clojure :results silent :tangle deps.edn
+{:paths ["src" "resources" "target"]
+ :deps {org.clojure/clojure {:mvn/version "1.10.2"}
+        org.clojure/clojurescript {:mvn/version "1.10.773"}
+        com.bhauman/figwheel-main {:mvn/version "0.2.12"}
+        org.clojure/core.async {:mvn/version "1.3.610"}
+        cljsjs/tfjs {:mvn/version "2.6.0-0"}}
+ :aliases
+ {
+:test {:extra-paths ["test"]
+         :extra-deps {org.clojure/test.check {:mvn/version "1.1.0"}}}
+  :runner
+  {:extra-deps {com.cognitect/test-runner
+                {:git/url "https://github.com/cognitect-labs/test-runner"
+                 :sha "b6b3193fcc42659d7e46ecd1884a228993441182"}}
+   :main-opts ["-m" "cognitect.test-runner"
+               "-d" "test"]}
+  :jar {:replace-deps {seancorfield/depstar {:mvn/version "2.0.171"}}
+        :exec-fn hf.depstar/jar
+        :exec-args {:jar "tf-cljs.jar" :sync-pom true}}
+  :install {:replace-deps {slipset/deps-deploy {:mvn/version "0.1.5"}}
+            :exec-fn deps-deploy.deps-deploy/deploy
+            :exec-args {:installer :local :artifact "tf-cljs.jar"}}
+  :deploy {:replace-deps {slipset/deps-deploy {:mvn/version "0.1.5"}}
+           :exec-fn deps-deploy.deps-deploy/deploy
+           :exec-args {:installer :remote :artifact "tf-cljs.jar"}}}}
+#+end_src
+
+
+
+* dev.cljs.edn
+
+#+Name: deps.cljs.edn
+#+begin_src clojure :results silent :tangle dev.cljs.edn
+{:main cerealbuster.tf-cljs}
+#+end_src
+
+
+* tfjs.cljs
+
+  #+Name: tfcljs.cljs
+  #+begin_src clojurescript :mkdirp yes :tangle ./src/cerealbuster/tf_cljs.cljs
+(ns cerealbuster.tf-cljs)
+(print "hello world")
+(.log js/console "hello world")
+  #+end_src
+
+* core
+
+  #+Name core.cljs
+  #+begin_src clojurescript mkdirp yes :tangle ./src/cerealbuster/core.cljs
+(ns cerealbuster.core
+  (:require [cljsjs.tfjs]))
+
+(defn tf-tensor [values & {:keys [shape dtype]}]
+  (.tensor js/tf (clj->js values) shape dtype))
+
+(defn tf-scalar [values & {:keys [dtype]}]
+  (.scalar js/tf (clj->js values dtype)))
+
+(defn tf-tensor1d [values & {:keys [dtype]}]
+  (.tensor1d js/tf (clj->js values) dtype))
+
+(defn tf-tensor2d [values & {:keys [shape dtype]}]
+  (.tensor2d js/tf (clj->js values) shape dtype))
+
+(defn tf-tensor3d [values & {:keys [shape dtype]}]
+  (.tensor3d js/tf (clj->js values) shape dtype))
+
+(defn tf-tensor4d [values & {:keys [shape dtype]}]
+  (.tensor4d js/tf (clj->js values) shape dtype))
+
+(defn tf-tensor5d [values & {:keys [shape dtype]}]
+  (.tensor5d js/tf (clj->js values) shape dtype))
+
+(defn tf-tensor6d [values & {:keys [shape dtype]}]
+  (.tensor6d js/tf (clj->js values) shape dtype))
+
+(defn tf-buffer [values & {:keys [shape dtype]}]
+  (.buffer js/tf (clj->js values) shape dtype))
+
+(defn tf-clone [x]
+  (.clone js/tf (clj->js x)))
+
+(defn tf-complex [real imag]
+  (.complex js/tf (clj->js real) (clj->js imag)))
+
+(defn tf-eye [num-rows &{:keys [num-columns batch-shape dtype]}]
+  (.eye js/tf num-rows num-columns batch-shape dtype))
+
+(defn tf-fill [shape value & {:keys [dtype]}]
+  (.fill js/tf (clj->js shape) value dtype))
+
+(defn tf-imag [i]
+  (.imag js/tf (clj->js i)))
+
+(defn tf-linspace [start stop num]
+  (.linspace js/tf start stop num))
+
+(defn tf-one-hot [indices depth &{:keys [on-value off-value] :or {on-value 1 off-value 0} }]
+  (.oneHot js/tf (clj->js indices) depth on-value off-value))
+
+(defn tf-ones [shape &{:keys [dtype]}]
+  (.ones js/tf (clj->js shape) dtype))
+
+(defn tf-ones-like [x]
+  (.onesLike js/tf (clj->js x)))
+
+(defn tf-print [x & {:keys [verbose]}]
+  (.print js/tf (clj->js x) verbose))
+
+(defn tf-range [start stop & {:keys [step dtype] :or {step 1}}]
+  (if (and (< stop start ) (= step 1))
+    (.range js/tf start stop -1 dtype)
+    (.range js/tf start stop step dtype)))
+
+(defn tf-real [i]
+  (.real js/tf (clj->js i)))
+
+(defn tf-truncated-normal [shape & {:keys [mean std-dev dtype seed]
+                                    :or {mean 0 std-dev 1 dtype "float32"}}]
+  (.truncatedNormal js/tf (clj->js shape) mean std-dev dtype seed))
+
+(defn tf-variable [init-value &{:keys [trainable name dtype] :or {trainable true}}]
+  (.variable js/tf init-value trainable name dtype))
+
+(defn tf-zeros [shape & {:keys [dtype] :or [dtype "float32"]}]
+  (.zeros js/tf (clj->js shape)))
+
+(defn tf-zeros-like [shape]
+  (.zerosLike js/tf (clj->js shape)))
+  #+end_src
+
+
+* Models
+
+#+Name: models.cljs
+#+begin_src clojurescript :mkdirp yes :tangle ./src/cerealbuster/models.cljs
+(ns cerealbuster.models
+  (:require [cljsjs.tfjs]
+            [cljs.core.async :refer [go <! chan <!]]
+            [cljs.core.async.interop :refer-macros [<p!]]))
+
+(defn sequential [& {:keys [layers name]}]
+  (.sequential js/tf (clj->js {:layers layers :name name})))
+
+(defn tf-model [& {:keys [inputs outputs name]}]
+  (.model js/tf (clj->js {:inputs inputs :outputs outputs :name name})))
+
+(defn tf-input [& {:keys [shape batch name dtype sparse]}]
+  (.input js/tf (clj->js {:shape shape :batch batch :name name :dtype dtype :sparse sparse})))
+
+(defn tf-load-graph-model [model-url & {:keys [request-init
+                                            on-progress
+                                            fetch-func
+                                            strict
+                                            weight-path-prefix
+                                            from-tf-hub
+                                               weight-url-converter]}]
+  (.loadGraphModel js/tf model-url (clj->js {:requestInit request-init
+                                             :onProgress on-progress
+                                             :fetchFunc fetch-func
+                                             :strict strict
+                                             :weightPathPrefix weight-path-prefix
+                                             :fromTFHub from-tf-hub
+                                             :weightUrlConverter weight-url-converter})))
+
+
+(defn tf-load-layers-model [path-or-io-handler & {:keys [request-init
+                                                         on-progress
+                                                         fetch-func
+                                                         strict
+                                                         weight-path-prefix
+                                                         from-tf-hub
+                                                         weight-url-converter]}]
+
+  (.loadLayersModel js/tf path-or-io-handler (clj->js {:requestInit request-init
+                                                       :onProgress on-progress
+                                                       :fetchFunc fetch-func
+                                                       :strict strict
+                                                       :weightPathPrefix weight-path-prefix
+                                                       :fromTFHub from-tf-hub
+                                                       :weightUrlConverter weight-url-converter})))
+
+
+(defn tf-io-browser-download [& file-name-prefix]
+  (.browserDownloads js/tf.io file-name-prefix))
+
+(defn tf-io-broser-files [f]
+  (.browserFiles js/tf.io f))
+
+(defn tf-io-http [p & {:keys [weight-path-prefix fetch-func on-progress]}]
+  (.http js/tf.io p (clj->js {:weightPathPrefix weight-path-prefix
+                              :fetchFunc fetch-func
+                              :onProgress on-progress})))
+
+(defn tf-io-copy-model [source-url dest-url]
+  (.copyModel js/tf.io source-url dest-url))
+
+(defn tf-io-list-models []
+  (.listModels js/tf.io))
+
+(defn tf-io-move-model [source-url dest-url]
+  (.moveModel js/tf.io source-url dest-url))
+
+(defn tf-io-remove-model [url]
+  (.removeModel js/tf.io url))
+
+(defn tf-register-class [cls]
+  (.registerClass js/tf cls))
+
+(defn tf-functional []
+  (new js/tf.Functional))
+
+(defn tf-graph-model []
+  (new js/tf.GraphModel))
+
+(defn tf-layers-model []
+  (new js/tf.LayersModel))
+
+(defn tf-sequential []
+  (new js/tf.Sequential))
+
+(defn summary [model & {:keys [line-length positions print-fn] :or {print-fn #(js/console.log %)}}]
+  (.summary model line-length positions print-fn))
+
+(defn add-layer! [model layer]
+  (.add model layer))
+
+(defn compie-model! [model &{:keys [optimizer loss metrics]}]
+  (.compile model (clj->js {:optimizer optimizer :loss loss :metrics metrics})))
+
+(defn evaluate-model [model x y & {:keys [batch-size verbose sample-weight steps]}]
+  (.evaluate model x y (clj->js {:batchSize batch-size
+                                 :verbose verbose
+                                 :sampleWeight sample-weight
+                                 :steps steps})))
+
+(defn evaluate-dataset [model dataset & {:keys [batches verbose]}]
+  (.evaluateDataset model (clj->js {:batches batches :verbose verbose})))
+
+(defn predict [model x & {:keys [batch-size verbose]}]
+  (.predict model x (clj->js {:batchSize batch-size :verbose verbose})))
+
+(defn predict-on-batch [model x]
+  (.predictOnBatch model x))
+
+(defn fit [model x y & {:keys [batch-size
+                                     epochs
+                                     verbose
+                                     callbacks
+                                     validation-split
+                                     validation-data
+                                     shuffle
+                                     class-weight
+                                     sample-weight
+                                     initial-epoch
+                                     steps-per-epoch
+                                     validation-steps
+                                     yield-every]}]
+
+  (.fit model x y (clj->js {:batchSize batch-size
+                            :epochs epochs
+                            :verbose verbose
+                            :callbacks callbacks
+                            :validationSplit validation-split
+                            :shuffle shuffle
+                            :classWeight class-weight
+                            :sampleWeight sample-weight
+                            :initialEpoch initial-epoch
+                            :stepsPerEpoch steps-per-epoch
+                            :validtionSteps validation-steps
+                            :yeldEvery yield-every})))
+
+(defn fit-dataset [model x y & {:keys [batch-size
+                                     epochs
+                                     verbose
+                                     callbacks
+                                     validation-split
+                                     validation-data
+                                     shuffle
+                                     class-weight
+                                     sample-weight
+                                     initial-epoch
+                                     steps-per-epoch
+                                     validation-steps
+                                     yield-every]}]
+
+  (.fitDataset model x y (clj->js {:batchSize batch-size
+                            :epochs epochs
+                            :verbose verbose
+                            :callbacks callbacks
+                            :validationSplit validation-split
+                            :shuffle shuffle
+                            :classWeight class-weight
+                            :sampleWeight sample-weight
+                            :initialEpoch initial-epoch
+                            :stepsPerEpoch steps-per-epoch
+                            :validtionSteps validation-steps
+                            :yeldEvery yield-every})))
+
+(defn train-on-batch [model x y]
+  (.trainOnBatch x y))
+
+(defn save [model handler-or-url & {:keys [trainable-only include-optimizer]
+                                    :or {include-optimzer false}}]
+  (.save model handler-or-url (clj->js {:trainableOnly trainable-only
+                                        :includeOptimizer include-optimizer})))
+
+
+(defn get-layer [model & name index]
+  (.getLayer model))
+
+
+(defn tf-symbolic-tensor []
+  js/tf.SymbolicTensor)
+
+
+(defn tf-deregister-op [name]
+  (.deregisterOp js/tf name))
+
+(defn tf-get-registered-op [name]
+  (.getRegisteredOp js/tf name))
+
+(defn tf-register-op [name op-fn]
+  (.registerOp js/tf name op-fn))
+
+
+
+(comment
+  (def mobilenet (atom nil))
+
+  (go
+    (let [model (<p! (tf-load-graph-model "https://storage.googleapis.com/tfjs-models/savedmodel/mobilenet_v2_1.0_224/model.json"))]
+
+      (reset! mobilenet model)))
+
+  (def zeros (cerealbuster.core/tf-zeros [1 224 224 3]))
+  (.predict @mobilenet zeros))
+
+(def grm (tf-graph-model))
+(def model (tf-sequential))
+
+(.add model (js/tf.layers.dense (clj->js {:units 1 :inputShape [1]})))
+  #+end_src
+
+
+* layers
+
+#+Name:layers.cljs
+#+begin_src clojurescript :mkdirp yes :tangle ./src/cerealbuster/layers.cljs
+(ns cerealbuster.layers
+  (:require [cljsjs.tfjs]
+            [cljs.core.async :refer [go chan <! >!]]
+            [cljs.core.async.interop :refer-macros [<p!]]
+            ))
+
+
+(defn elu [& {:keys [alpha
+                     input-shape
+                     batch-input-shape
+                     batch-size
+                     dtype
+                     name
+                     trainable
+                     weights
+                     input-dtype]}]
+
+  (.elu js/tf.layers (clj->js {:alpha alpha
+                               :inputShape input-shape
+                               :batchInputShape batch-input-shape
+                               :batchSize batch-size
+                               :dtype dtype
+                               :name name
+                               :trainable trainable
+                               :weights weights
+                               :inputDType input-dtype})))
+
+
+(defn leaky-relu [& {:keys [alpha
+                            input-shape
+                            batch-input-shape
+                            batch-size
+                            dtype
+                            name
+                            trainable
+                            weights
+                            input-dtype]}]
+  (.leakyReLU js/tf.layers (clj->js {:alpha alpha
+                                     :inputShape input-shape
+                                     :batchInputShape batch-input-shape
+                                     :batchSize batch-size
+                                     :dtype dtype
+                                     :name name
+                                     :trainable trainable
+                                     :weights weights
+                                     :inputDType input-dtype})))
+
+
+(defn prelu [& {:keys [alpha-initializer
+                       alpha-regularizer
+                       alpha-constraint
+                       shared-axes
+                       input-shape
+                       batch-input-shape
+                       batch-size
+                       dtype
+                       name
+                       trainable
+                       weights
+                       input-dtype]}]
+  (.prelu js/tf.layers (clj->js {:alphaInitialier alpha-initializer
+                                 :alphaRegularizer alpha-regularizer
+                                 :alpha-constraint alpha-constraint
+                                 :inputShape input-shape
+                                 :batchInputShape batch-input-shape
+                                 :batchSize batch-size
+                                 :dtype dtype
+                                 :name name
+                                 :trainable trainable
+                                 :weights weights
+                                 :inputDType input-dtype})))
+
+
+(defn relu [& {:keys [max-value
+                     input-shape
+                     batch-input-shape
+                     batch-size
+                     dtype
+                     name
+                     trainable
+                     weights
+                     input-dtype]}]
+
+  (.reLU js/tf.layers (clj->js {:maxValue max-value
+                               :inputShape input-shape
+                               :batchInputShape batch-input-shape
+                               :batchSize batch-size
+                               :dtype dtype
+                               :name name
+                               :trainable trainable
+                               :weights weights
+                               :inputDType input-dtype})))
+
+
+(defn softmax [& {:keys [axis
+                         input-shape
+                         batch-input-shape
+                         batch-size
+                         dtype
+                         name
+                         trainable
+                         weights
+                         input-dtype]}]
+
+  (.softmax js/tf.layers (clj->js {:axis axis
+                                   :inputShape input-shape
+                                   :batchInputShape batch-input-shape
+                                   :batchSize batch-size
+                                   :dtype dtype
+                                   :name name
+                                   :trainable trainable
+                                   :weights weights
+                                   :inputDType input-dtype})))
+
+(defn thresholded-relu [& {:keys [theta
+                                  input-shape
+                                  batch-input-shape
+                                  batch-size
+                                  dtype
+                                  name
+                                  trainable
+                                  weights
+                                  input-dtype]}]
+
+  (.thresholdedReLU js/tf.layers (clj->js {:theta theta
+                                           :inputShape input-shape
+                                           :batchInputShape batch-input-shape
+                                           :batchSize batch-size
+                                           :dtype dtype
+                                           :name name
+                                           :trainable trainable
+                                           :weights weights
+                                           :inputDType input-dtype})))
+
+(defn activation [& {:keys [activation
+                            input-shape
+                            batch-input-shape
+                            batch-size
+                            dtype
+                            name
+                            trainable
+                            weights
+                            input-dtype]}]
+
+  (.activation js/tf.layers (clj->js {:activation activation
+                                      :inputShape input-shape
+                                      :batchInputShape batch-input-shape
+                                      :batchSize batch-size
+                                      :dtype dtype
+                                      :name name
+                                      :trainable trainable
+                                      :weights weights
+                                      :inputDType input-dtype})))
+
+(defn dense [& {:keys [units
+                       activation
+                       use-bias
+                       kernel-initializer
+                       bias-initializer
+                       input-dim
+                       kernel-constraint
+                       bias-constraint
+                       kernel-reqularizer
+                       bias-reqularizer
+                       activity-regularizer
+                       input-shape
+                       batch-input-shape
+                       batch-size
+                       dtype
+                       name
+                       trainable
+                       weights
+                       input-dtype]}]
+
+  (.dense js/tf.layers (clj->js {:units units
+                                 :activation activation
+                                 :useBias use-bias
+                                 :kernelInitializer kernel-initializer
+                                 :biasInitializer bias-initializer
+                                 :inputDim input-dim
+                                 :kernelConstraint kernel-constraint
+                                 :biasConstraint bias-constraint
+                                 :kernelRegularizer kernel-reqularizer
+                                 :biasRegularizer bias-reqularizer
+                                 :activityRegularizer activity-regularizer
+                                 :inputShape input-shape
+                                 :batchInputShape batch-input-shape
+                                 :batchSize batch-size
+                                 :dtype dtype
+                                 :name name
+                                 :trainable trainable
+                                 :weights weights
+                                 :inputDType input-dtype})))
+
+
+
+(defn dropout [& {:keys [rate
+                         noise-shape
+                         seed
+                         input-shape
+                         batch-input-shape
+                         batch-size
+                         dtype
+                         name
+                         trainable
+                         weights
+                         input-dtype]}]
+
+  (.dropout js/tf.layers (clj->js {:rate rate
+                                   :noiseShape noise-shape
+                                   :seed seed
+                                   :inputShape input-shape
+                                   :batchInputShape batch-input-shape
+                                   :batchSize batch-size
+                                   :dtype dtype
+                                   :name name
+                                   :trainable trainable
+                                   :weights weights
+                                   :inputDType input-dtype})))
+
+
+(defn embedding [& {:keys [input-dim
+                           output-dim
+                           embeddings-initializer
+                           embeddings-regularizer
+                           activity-regularizer
+                           embedding-constraint
+                           mask-zero
+                           input-shape
+                           batch-input-shape
+                           batch-size
+                           dtype
+                           name
+                           trainable
+                           weights
+                           input-dtype]}]
+
+  (.embedding js/tf.layers (clj->js {:inptuDim input-dim
+                                     :outputDim output-dim
+                                     :embeddingsInitializer embeddings-initializer
+                                     :embeddingsRegularizer embeddings-regularizer
+                                     :activityRegularizer activity-regularizer
+                                     :embeddingConstraint embedding-constraint
+                                     :maksZero mask-zero
+                                     :inputShape input-shape
+                                     :batchInputShape batch-input-shape
+                                     :batchSize batch-size
+                                     :dtype dtype
+                                     :name name
+                                     :trainable trainable
+                                     :weights weights
+                                     :inputDType input-dtype})))
+
+(defn flatten [& {:keys [data-format
+                         input-shape
+                         batch-input-shape
+                         batch-size
+                         dtype
+                         name
+                         trainable
+                         weights
+                         input-dtype]}]
+
+  (.flatten  js/tf.layers (clj->js { :dataFormat data-format
+                                    :inputShape input-shape
+                                    :batchInputShape batch-input-shape
+                                    :batchSize batch-size
+                                    :dtype dtype
+                                    :name name
+                                    :trainable trainable
+                                    :weights weights
+                                    :inputDType input-dtype})))
+
+
+(defn permute [& {:keys [dims
+                         input-shape
+                         batch-input-shape
+                         batch-size
+                         dtype
+                         name
+                         trainable
+                         weights
+                         input-dtype]}]
+
+  (.permute  js/tf.layers (clj->js { :dims dims
+                                    :inputShape input-shape
+                                    :batchInputShape batch-input-shape
+                                    :batchSize batch-size
+                                    :dtype dtype
+                                    :name name
+                                    :trainable trainable
+                                    :weights weights
+                                    :inputDType input-dtype})))
+
+(defn reshape [& {:keys [target-shape
+                         input-shape
+                         batch-input-shape
+                         batch-size
+                         dtype
+                         name
+                         trainable
+                         weights
+                         input-dtype]}]
+
+  (.reshape  js/tf.layers (clj->js { :targetShape target-shape
+                                    :inputShape input-shape
+                                    :batchInputShape batch-input-shape
+                                    :batchSize batch-size
+                                    :dtype dtype
+                                    :name name
+                                    :trainable trainable
+                                    :weights weights
+                                    :inputDType input-dtype})))
+
+
+(defn spatial-dropout-1d [& {:keys [rate
+                                    seed
+                                    input-shape
+                                    batch-input-shape
+                                    batch-size
+                                    dtype
+                                    name
+                                    trainable
+                                    weights
+                                    input-dtype]}]
+
+  (.spatialDroput1d  js/tf.layers (clj->js {:rate rate
+                                            :seed seed
+                                            :inputShape input-shape
+                                            :batchInputShape batch-input-shape
+                                            :batchSize batch-size
+                                            :dtype dtype
+                                            :name name
+                                            :trainable trainable
+                                            :weights weights
+                                            :inputDType input-dtype})))
+(coment
+ (def model (cerealbuster.models/tf-sequential))
+
+ (cerealbuster.models/add-layer! model (dense :units 10 :input-shape [20] :activation "relu"))
+ (cerealbuster.models/add-layer! model (dense :units 20 :activation "relu"))
+ (cerealbuster.models/add-layer! model (dense :units 2 :activation "softmax"))
+
+ (cerealbuster.models/summary model)
+
+ (cerealbuster.models/compie-model! model :optimizer "adam" :metrics ["acc"] :loss "categoricalCrossentropy")
+
+ (def x (cerealbuster.core/tf-ones [8 20]))
+ (def y (cerealbuster.core/tf-ones [8 2]))
+
+ (go (let [history (<p! (cerealbuster.models/fit model x y :batch-size 4 :epochs 3))]
+       (print (js->clj (.-history history))))))
+#+end_src
+
+* data
+
+  This implements the data api of tfjs.
+
+  #+NAME data.cljs
+  #+begin_src clojurescript :mkdirp yes :tangle ./src/cerealbuster/data.cljs
+(ns cerealbuster.data
+  (:require [cljsjs.tfjs]
+            [cljs.core.async :refer [go <!]]
+            [cljs.core.async.interop :refer-macros [<p!]]))
+
+(defn tf-data-array [items]
+  (js/tf.data.array (clj->js items)))
+
+(defn tf-data-csv [src & csv-config]
+  (js/tf.data.csv src (clj->js csv-config)))
+
+(defn tf-data-generator [generator]
+  (js/tf.data.generator generator))
+
+(defn tf-data-microphone [&{:keys [fftSize
+                                   columnTruncateLength
+                                   numFramesPerSpectogram
+                                   sampleRateHz
+                                   includeWaveform]}]
+  (let [config {:fftSize fftSize
+                :columnTruncateLength columnTruncateLength
+                :numFramesPerSpectogram numFramesPerSpectogram
+                :sampleRateHz sampleRateHz
+                :includeWaveform includeWaveform}]
+
+    (.microphone js/tf.data (clj->js config))))
+
+
+(defn tf-data-webcam [webcamVideoElement &{:keys [facingMode
+                                                  deviceId
+                                                  resizeWidth
+                                                  resizeHeight
+                                                  centerCrop]}]
+  (let [config {:facingMode facingMode
+                :deviceId deviceId
+                :resizeWidth resizeWidth
+                :resizeHeight resizeHeight
+                :centerCrop centerCrop}]
+
+    (.webcam js/tf.data webcamVideoElement (clj->js config))))
+
+
+
+(defn tf-data-zip [dataset]
+  (.zip js/tf.data (clj->js dataset)))
+
+(defn tf-data-csv-dataset []
+  (js/tf.data.CSVDataset))
+
+
+(defn tf-data-dataset []
+  (js/tf.data.Dataset))
+
+
+(comment
+  (def ds1 (tf-data-array [{:a 1} {:a 2} {:a 3}]))
+  (def ds2 (tf-data-array [{:b 4} {:b 5} {:b 6}]))
+  (def ds3 (tf-data-zip [ds1 ds2]))
+  (js/console.log ds1)
+
+  (go  (print (js->clj (<p! (.toArray ds3))))))
+
+(comment
+  (go (let [mic (<p! (tf-data-microphone {:fftSize 1024
+                                          :columnTruncateLength 232
+                                          :numFramesPerSpectogram 43
+                                          :sampleRateHz 44100
+                                          :includeSpectogram true
+                                          :includeWaveform true}))
+            audiodata (<p! (.capture mic))
+            spectrogram (.-spectrogram audiodata)
+            ]
+        (print spectrogram)
+        (.stop mic))))
+
+(comment
+  (go (let [videoEl (js/document.createElement "video")
+            cam (<p! (tf-data-webcam videoEl))
+            img (<p! (.capture cam))]
+        (print img)
+        (.stop cam))))
+  #+end_src
